@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>SWILL ESCORT</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --card: #141414;
+            --red: #e63946;
+            --red-dark: #b71c1c;
+            --text: #ffffff;
+            --text-secondary: #aaaaaa;
+            --gold: #ffd700;
+            --green: #4caf50;
+            --border: #2a2a2a;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow-x: hidden;
+        }
+        
+        /* === ЭКРАНЫ === */
+        .screen { display: none; padding-bottom: 70px; min-height: 100vh; }
+        .screen.active { display: block; }
+        
+        /* === БАННЕР === */
+        .banner {
+            width: 100%;
+            height: auto;
+            max-height: 180px;
+            object-fit: cover;
+            display: block;
+            background: var(--card);
+        }
+        .banner-placeholder {
+            width: 100%;
+            height: 140px;
+            background: linear-gradient(135deg, #1a1a1a, #2d0000);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: var(--red);
+            letter-spacing: 3px;
+        }
+        
+        /* === ЗАГОЛОВКИ === */
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            padding: 16px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--red);
+        }
+        .divider {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--red), transparent);
+            margin: 0 16px 16px;
+        }
+        
+        /* === ТАББАР === */
+        .tabbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: #0d0d0d;
+            display: flex;
+            border-top: 1px solid var(--border);
+            z-index: 100;
+        }
+        .tab {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-size: 10px;
+            cursor: pointer;
+            transition: .2s;
+            border: none;
+            background: none;
+            gap: 4px;
+        }
+        .tab.active { color: var(--red); }
+        .tab-icon { font-size: 20px; }
+        
+        /* === КАТАЛОГ === */
+        .catalog-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 0 10px;
+        }
+        .girl-card {
+            background: var(--card);
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: .2s;
+            border: 1px solid transparent;
+        }
+        .girl-card:active { border-color: var(--red); transform: scale(0.97); }
+        .girl-photo {
+            width: 100%;
+            aspect-ratio: 3/4;
+            object-fit: cover;
+            background: #1a1a1a;
+        }
+        .girl-info {
+            padding: 8px 10px;
+        }
+        .girl-name {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .girl-rating {
+            font-size: 11px;
+            color: var(--gold);
+        }
+        .girl-price {
+            font-size: 12px;
+            color: var(--red);
+            font-weight: 600;
+        }
+        
+        /* === КАРТОЧКА ДЕВУШКИ === */
+        .detail-photo {
+            width: 100%;
+            aspect-ratio: 3/4;
+            object-fit: cover;
+            background: #1a1a1a;
+        }
+        .detail-info {
+            padding: 16px;
+        }
+        .detail-params {
+            display: flex;
+            gap: 16px;
+            margin: 12px 0;
+            flex-wrap: wrap;
+        }
+        .detail-param {
+            background: var(--card);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+        .price-options {
+            display: flex;
+            gap: 8px;
+            margin: 12px 0;
+            flex-wrap: wrap;
+        }
+        .price-option {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px;
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 12px;
+            transition: .2s;
+        }
+        .price-option.selected {
+            border-color: var(--red);
+            background: #1a0000;
+        }
+        
+        /* === КНОПКИ === */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: var(--red);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: .2s;
+            text-align: center;
+        }
+        .btn:active { background: var(--red-dark); transform: scale(0.98); }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--red);
+            color: var(--red);
+        }
+        .btn-outline:active { background: var(--red); color: #fff; }
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 12px;
+            display: inline-block;
+            width: auto;
+        }
+        
+        /* === ФОРМЫ === */
+        .input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 16px;
+            margin-bottom: 10px;
+            transition: .2s;
+            outline: none;
+        }
+        .input:focus { border-color: var(--red); }
+        .input.success { border-color: var(--green); }
+        .input.error { border-color: var(--red); }
+        .input-hint {
+            font-size: 10px;
+            color: var(--text-secondary);
+            margin-top: -8px;
+            margin-bottom: 8px;
+            display: none;
+        }
+        .input-hint.show { display: block; }
+        
+        /* === ПИН-КЛАВИАТУРА === */
+        .pin-dots {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin: 24px 0;
+        }
+        .pin-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--card);
+            border: 2px solid var(--border);
+            transition: .2s;
+        }
+        .pin-dot.filled { background: var(--red); border-color: var(--red); }
+        .pin-dot.error { animation: shake 0.5s; background: var(--red); border-color: var(--red); }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        
+        .pin-keyboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            max-width: 280px;
+            margin: 0 auto;
+        }
+        .pin-key {
+            aspect-ratio: 1;
+            background: var(--card);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 22px;
+            cursor: pointer;
+            transition: .1s;
+        }
+        .pin-key:active { background: var(--red); }
+        
+        /* === ПРОФИЛЬ === */
+        .profile-header {
+            text-align: center;
+            padding: 20px;
+        }
+        .profile-balance {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--red);
+        }
+        .profile-section {
+            background: var(--card);
+            margin: 8px 12px;
+            padding: 16px;
+            border-radius: 12px;
+        }
+        .profile-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+        
+        /* === ЧАТ === */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            min-height: 300px;
+            max-height: calc(100vh - 300px);
+        }
+        .chat-msg {
+            margin-bottom: 8px;
+            max-width: 85%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .chat-msg.user {
+            background: var(--red);
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+        .chat-msg.support {
+            background: var(--card);
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+        }
+        .chat-topics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 8px 12px;
+        }
+        .chat-topic {
+            padding: 6px 12px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            font-size: 11px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .chat-topic:active { background: var(--red); }
+        
+        /* === АКЦИИ === */
+        .promo-card {
+            background: var(--card);
+            margin: 10px 12px;
+            padding: 16px;
+            border-radius: 12px;
+            border-left: 3px solid var(--red);
+        }
+        .promo-code {
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 18px;
+            color: var(--red);
+            text-align: center;
+            letter-spacing: 2px;
+            cursor: pointer;
+            margin: 8px 0;
+        }
+        
+        /* === СПИННЕР === */
+        .spinner {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        .spinner.active { display: block; }
+        .spinner-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--red);
+            margin: 0 4px;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .spinner-dot:nth-child(1) { animation-delay: -0.32s; }
+        .spinner-dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+        
+        /* === УВЕДОМЛЕНИЯ === */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--red);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 10px;
+            z-index: 200;
+            opacity: 0;
+            transition: .3s;
+            font-weight: 600;
+        }
+        .toast.show { opacity: 1; }
+        
+        /* === АДАПТИВ === */
+        .container { max-width: 480px; margin: 0 auto; }
+        
+        .back-btn {
+            padding: 12px 16px;
+            font-size: 16px;
+            color: var(--red);
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+        
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- === ЭКРАН РЕГИСТРАЦИИ === -->
+        <div class="screen active" id="screen-register">
+            <img class="banner banner-placeholder" id="banner-register" src="" onerror="this.className='banner banner-placeholder';this.removeAttribute('src');">
+            <div class="banner-placeholder" id="banner-register-placeholder">SWILL ESCORT</div>
+            
+            <div style="padding: 0 16px;">
+                <h2 class="section-title" style="padding-left:0">👤 Регистрация</h2>
+                <div class="divider" style="margin-left:0;margin-right:0"></div>
+                
+                <input class="input" id="reg-name" placeholder="Имя">
+                
+                <div style="display:flex;gap:8px;align-items:center">
+                    <input class="input" id="reg-birthday" placeholder="Дата рождения (ДД.ММ.ГГГГ)" style="flex:1">
+                    <span style="cursor:pointer;font-size:20px" onclick="toggleHint('birthday-hint')">❓</span>
+                </div>
+                <div class="input-hint" id="birthday-hint">🎂 Укажите дату рождения и получите скидку 50% в День Рождения!</div>
+                
+                <div style="display:flex;gap:8px;align-items:center">
+                    <input class="input" id="reg-pin" placeholder="ПИН-код (4 цифры)" maxlength="4" type="password" style="flex:1">
+                    <span style="cursor:pointer;font-size:20px" onclick="toggleHint('pin-hint')">❓</span>
+                </div>
+                <div class="input-hint" id="pin-hint">🔐 Запомните этот код! Он понадобится для следующих входов.</div>
+                
+                <input class="input" id="reg-promo" placeholder="Промокод (если есть)" oninput="checkPromo(this.value)">
+                <div id="promo-status" style="font-size:11px;margin-bottom:8px"></div>
+                
+                <button class="btn" onclick="register()">✅ Зарегистрироваться</button>
+            </div>
+        </div>
+        
+        <!-- === ЭКРАН ВХОДА === -->
+        <div class="screen" id="screen-login">
+            <img class="banner banner-placeholder" id="banner-login" src="" onerror="this.className='banner banner-placeholder';this.removeAttribute('src');">
+            <div class="banner-placeholder" id="banner-login-placeholder">SWILL ESCORT</div>
+            
+            <h2 class="section-title">🔑 Вход</h2>
+            <div class="divider"></div>
+            
+            <div class="pin-dots" id="pin-dots">
+                <div class="pin-dot" id="dot0"></div>
+                <div class="pin-dot" id="dot1"></div>
+                <div class="pin-dot" id="dot2"></div>
+                <div class="pin-dot" id="dot3"></div>
+            </div>
+            <p style="text-align:center;min-height:20px" id="pin-error"></p>
+            
+            <div class="pin-keyboard" id="pin-keyboard"></div>
+        </div>
+        
+        <!-- === ОСНОВНОЙ ИНТЕРФЕЙС === -->
+        <div class="screen" id="screen-main">
+            <!-- КАТАЛОГ -->
+            <div id="tab-catalog">
+                <img class="banner banner-placeholder" id="banner-catalog" src="" onerror="this.className='banner banner-placeholder';this.removeAttribute('src');">
+                <div class="banner-placeholder" id="banner-catalog-placeholder">SWILL ESCORT</div>
+                <div class="catalog-grid" id="catalog-grid"></div>
+            </div>
+            
+            <!-- АКЦИИ -->
+            <div id="tab-promo" class="hidden">
+                <img class="banner banner-placeholder" id="banner-promo" src="">
+                <h2 class="section-title">🎁 Акции</h2>
+                <div class="divider"></div>
+                <div id="promo-list"></div>
+            </div>
+            
+            <!-- ЧАТ -->
+            <div id="tab-chat" class="hidden">
+                <img class="banner banner-placeholder" id="banner-chat" src="">
+                <h2 class="section-title">💬 Поддержка</h2>
+                <div class="divider"></div>
+                <div class="chat-messages" id="chat-messages"></div>
+                <div class="chat-topics" id="chat-topics"></div>
+                <div style="padding:8px 12px;display:flex;gap:8px">
+                    <input class="input" id="chat-input" placeholder="Введите сообщение..." style="flex:1;margin:0">
+                    <button class="btn btn-sm" onclick="sendChat()" style="width:50px">➤</button>
+                </div>
+            </div>
+            
+            <!-- ПРОФИЛЬ -->
+            <div id="tab-profile" class="hidden">
+                <img class="banner banner-placeholder" id="banner-profile" src="">
+                <div class="profile-header">
+                    <div class="profile-balance" id="prof-balance">0 BYN</div>
+                    <button class="btn btn-outline" onclick="showDeposit()" style="margin-top:8px">💳 Пополнить</button>
+                </div>
+                <div class="profile-section">
+                    <h3>📋 История</h3>
+                    <div id="prof-history"></div>
+                </div>
+                <div class="profile-section">
+                    <div class="profile-row">
+                        <span>🎟 Мой промокод</span>
+                        <span style="color:var(--red);font-family:monospace" id="prof-promo" onclick="copyText(this.innerText)">---</span>
+                    </div>
+                    <div class="profile-row">
+                        <span>👥 Приглашено</span>
+                        <span id="prof-invited">0</span>
+                    </div>
+                </div>
+                <div class="profile-section">
+                    <div class="profile-row">
+                        <span>🎂 Дата рождения</span>
+                        <span id="prof-bday">---</span>
+                    </div>
+                </div>
+                <div class="profile-section">
+                    <p style="margin-bottom:8px">👱‍♀️ Ты девушка? Хочешь сотрудничать?</p>
+                    <button class="btn btn-outline" onclick="applyModel()">📩 Подать заявку</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- === ТАББАР === -->
+        <div class="tabbar hidden" id="tabbar">
+            <button class="tab active" onclick="switchTab('catalog')"><span class="tab-icon">🔥</span>Каталог</button>
+            <button class="tab" onclick="switchTab('promo')"><span class="tab-icon">🎁</span>Акции</button>
+            <button class="tab" onclick="switchTab('chat')"><span class="tab-icon">💬</span>Чат</button>
+            <button class="tab" onclick="switchTab('profile')"><span class="tab-icon">👤</span>Ты</button>
+        </div>
+        
+        <!-- === СПИННЕР === -->
+        <div class="spinner" id="spinner">
+            <div class="spinner-dot"></div>
+            <div class="spinner-dot"></div>
+            <div class="spinner-dot"></div>
+        </div>
+        
+        <!-- === ТОСТ === -->
+        <div class="toast" id="toast"></div>
+    </div>
+
+    <script>
+        // ===== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ =====
+        const tg = window.Telegram.WebApp;
+        let uid = null;
+        let currentUser = null;
+        let currentGirlId = null;
+        let selectedPrice = null;
+        let selectedHours = 1;
+        let pinInput = '';
+        let chatTopic = '';
+        let currentTab = 'catalog';
+        
+        const API = '/api';
+        
+        tg.ready();
+        tg.expand();
+        
+        // ===== ИНИЦИАЛИЗАЦИЯ =====
+        uid = tg.initDataUnsafe?.user?.id ? String(tg.initDataUnsafe.user.id) : 'test123';
+        
+        loadUser();
+        
+        function loadUser() {
+            fetch(`${API}/user/${uid}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) {
+                        showScreen('register');
+                    } else {
+                        currentUser = data;
+                        showScreen('login');
+                    }
+                })
+                .catch(() => showScreen('register'));
+        }
+        
+        // ===== НАВИГАЦИЯ =====
+        function showScreen(name) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(`screen-${name}`).classList.add('active');
+            
+            if (name === 'main') {
+                document.getElementById('tabbar').classList.remove('hidden');
+                switchTab('catalog');
+            } else {
+                document.getElementById('tabbar').classList.add('hidden');
+            }
+        }
+        
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#tabbar .tab').forEach(t => {
+                if (t.innerText.includes(tab === 'catalog' ? 'Каталог' : tab === 'promo' ? 'Акции' : tab === 'chat' ? 'Чат' : 'Ты')) {
+                    t.classList.add('active');
+                }
+            });
+            
+            ['catalog', 'promo', 'chat', 'profile'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden');
+            });
+            document.getElementById(`tab-${tab}`).classList.remove('hidden');
+            
+            if (tab === 'catalog') loadCatalog();
+            if (tab === 'promo') loadPromos();
+            if (tab === 'chat') loadChat();
+            if (tab === 'profile') loadProfile();
+        }
+        
+        // ===== РЕГИСТРАЦИЯ =====
+        function register() {
+            const name = document.getElementById('reg-name').value.trim();
+            const birthday = document.getElementById('reg-birthday').value.trim();
+            const pin = document.getElementById('reg-pin').value.trim();
+            const promo = document.getElementById('reg-promo').value.trim();
+            
+            if (!name || !pin || pin.length !== 4) {
+                showToast('Заполните все поля');
+                return;
+            }
+            
+            fetch(`${API}/register`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({uid, name, birthday, pin, promo})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    currentUser = {name, pin, balance: 0, promo_code: data.promo_code, invited: 0, history: [], birthday};
+                    showScreen('main');
+                    showToast('✅ Регистрация успешна!');
+                } else {
+                    showToast('❌ Ошибка регистрации');
+                }
+            });
+        }
+        
+        function checkPromo(code) {
+            if (!code) {
+                document.getElementById('promo-status').innerHTML = '';
+                return;
+            }
+            fetch(`${API}/check_promo/${code}`)
+                .then(r => r.json())
+                .then(data => {
+                    const el = document.getElementById('promo-status');
+                    if (data.valid) {
+                        el.innerHTML = '✅ Промокод действителен';
+                        el.style.color = 'var(--green)';
+                    } else {
+                        el.innerHTML = '❌ Такого промокода нет';
+                        el.style.color = 'var(--red)';
+                    }
+                });
+        }
+        
+        // ===== ВХОД (ПИН) =====
+        function buildPinKeyboard() {
+            const kb = document.getElementById('pin-keyboard');
+            kb.innerHTML = '';
+            const digits = [1,2,3,4,5,6,7,8,9,'⌫',0,'✓'];
+            digits.forEach(d => {
+                const btn = document.createElement('button');
+                btn.className = 'pin-key';
+                btn.innerText = d;
+                btn.onclick = () => handlePinKey(d);
+                kb.appendChild(btn);
+            });
+        }
+        
+        function handlePinKey(key) {
+            if (key === '⌫') {
+                pinInput = pinInput.slice(0, -1);
+            } else if (key === '✓') {
+                if (pinInput.length === 4) verifyPin();
+                return;
+            } else {
+                if (pinInput.length < 4) pinInput += String(key);
+            }
+            
+            updatePinDots();
+            
+            if (pinInput.length === 4) {
+                setTimeout(verifyPin, 300);
+            }
+        }
+        
+        function updatePinDots() {
+            for (let i = 0; i < 4; i++) {
+                const dot = document.getElementById(`dot${i}`);
+                dot.classList.toggle('filled', i < pinInput.length);
+                dot.classList.remove('error');
+            }
+            document.getElementById('pin-error').innerText = '';
+        }
+        
+        function verifyPin() {
+            if (pinInput === currentUser?.pin) {
+                showScreen('main');
+                showToast('✅ Добро пожаловать!');
+            } else {
+                document.querySelectorAll('.pin-dot').forEach(d => d.classList.add('error'));
+                document.getElementById('pin-error').innerText = 'Неверный ПИН-код';
+                pinInput = '';
+                setTimeout(updatePinDots, 500);
+            }
+        }
+        
+        // ===== КАТАЛОГ =====
+        function loadCatalog() {
+            fetch(`${API}/girls`)
+                .then(r => r.json())
+                .then(girls => {
+                    const grid = document.getElementById('catalog-grid');
+                    grid.innerHTML = girls.map(g => `
+                        <div class="girl-card" onclick="showGirl(${g.id})">
+                            <img class="girl-photo" src="${g.photos?.[0] || 'https://via.placeholder.com/300x400/1a1a1a/e63946?text='+encodeURIComponent(g.name)}" alt="${g.name}">
+                            <div class="girl-info">
+                                <div class="girl-name">${g.name}, ${g.age}</div>
+                                <div class="girl-rating">⭐ ${g.rating || '4.8'}</div>
+                                <div class="girl-price">от ${g.price_1h} BYN</div>
+                            </div>
+                        </div>
+                    `).join('');
+                });
+        }
+        
+        function showGirl(id) {
+            currentGirlId = id;
+            fetch(`${API}/girls`)
+                .then(r => r.json())
+                .then(girls => {
+                    const g = girls.find(x => x.id === id);
+                    if (!g) return;
+                    
+                    document.getElementById('tab-catalog').innerHTML = `
+                        <button class="back-btn" onclick="switchTab('catalog')">← Назад</button>
+                        <img class="detail-photo" src="${g.photos?.[0] || 'https://via.placeholder.com/400x600/1a1a1a/e63946?text='+encodeURIComponent(g.name)}" alt="${g.name}">
+                        <div class="detail-info">
+                            <h2>${g.name}, ${g.age} лет</h2>
+                            <div style="color:var(--gold);margin:4px 0">⭐ ${g.rating || '4.8'} (${(g.reviews||[]).length} отзывов)</div>
+                            <div class="detail-params">
+                                <span class="detail-param">📏 ${g.height} см</span>
+                                <span class="detail-param">⚖️ ${g.weight} кг</span>
+                                <span class="detail-param">🍒 ${g.chest} размер</span>
+                            </div>
+                            <div class="price-options" id="price-options">
+                                ${g.price_1h ? `<div class="price-option" onclick="selectPrice(this, ${g.price_1h}, 1)">1 час<br>${g.price_1h} BYN</div>` : ''}
+                                ${g.price_2h ? `<div class="price-option" onclick="selectPrice(this, ${g.price_2h}, 2)">2 часа<br>${g.price_2h} BYN</div>` : ''}
+                                ${g.price_night ? `<div class="price-option" onclick="selectPrice(this, ${g.price_night}, 8)">Ночь<br>${g.price_night} BYN</div>` : ''}
+                            </div>
+                            <div style="display:flex;gap:8px;margin:12px 0">
+                                <input class="input" id="booking-promo" placeholder="Промокод" style="flex:1;margin:0">
+                            </div>
+                            <button class="btn" onclick="bookGirl(${g.id})" id="book-btn">💎 Забронировать</button>
+                            <div style="margin-top:16px">
+                                <h3>⭐ Отзывы (последние 3):</h3>
+                                ${(g.reviews||[]).slice(-3).reverse().map(r => `
+                                    <div style="background:var(--card);padding:10px;border-radius:8px;margin:6px 0">
+                                        <strong>${r.name}</strong>: ${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}<br>
+                                        "${r.text}"
+                                    </div>
+                                `).join('') || '<p style="color:var(--text-secondary)">Пока нет отзывов</p>'}
+                            </div>
+                        </div>
+                    `;
+                });
+        }
+        
+        function selectPrice(el, price, hours) {
+            document.querySelectorAll('.price-option').forEach(o => o.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedPrice = price;
+            selectedHours = hours;
+        }
+        
+        function bookGirl(girlId) {
+            if (!selectedPrice) {
+                showToast('Выберите время');
+                return;
+            }
+            
+            document.getElementById('spinner').classList.add('active');
+            
+            setTimeout(() => {
+                document.getElementById('spinner').classList.remove('active');
+                
+                // Показываем "недостаточно средств"
+                const tabCatalog = document.getElementById('tab-catalog');
+                tabCatalog.innerHTML = `
+                    <button class="back-btn" onclick="showGirl(${girlId})">← Назад</button>
+                    <div style="text-align:center;padding:40px 20px">
+                        <div style="font-size:48px;margin-bottom:16px">❌</div>
+                        <h2>Недостаточно средств</h2>
+                        <p style="color:var(--text-secondary);margin:12px 0">Пополните баланс для бронирования</p>
+                        <button class="btn" onclick="showDeposit()">💳 Пополнить баланс</button>
+                    </div>
+                `;
+            }, 2000);
+        }
+        
+        // ===== ПОПОЛНЕНИЕ =====
+        function showDeposit() {
+            const tabCatalog = document.getElementById('tab-catalog');
+            fetch(`${API}/rate`)
+                .then(r => r.json())
+                .then(data => {
+                    const usdtAmount = (200 / data.rate).toFixed(2);
+                    tabCatalog.innerHTML = `
+                        <button class="back-btn" onclick="switchTab('catalog')">← Назад</button>
+                        <h2 class="section-title">💳 Пополнение</h2>
+                        <div class="divider"></div>
+                        <div style="padding:0 16px">
+                            <input class="input" id="deposit-amount" placeholder="Сумма BYN (мин. 200)" type="number" min="200" value="200">
+                            <p style="color:var(--text-secondary);margin-bottom:16px">Способ оплаты: Криптовалюта</p>
+                            <button class="btn" onclick="showDepositCrypto()">💳 Перейти к оплате</button>
+                        </div>
+                    `;
+                });
+        }
+        
+        function showDepositCrypto() {
+            const amount = parseInt(document.getElementById('deposit-amount')?.value || 200);
+            fetch(`${API}/rate`)
+                .then(r => r.json())
+                .then(data => {
+                    const usdt = (amount / data.rate).toFixed(2);
+                    document.getElementById('tab-catalog').innerHTML = `
+                        <button class="back-btn" onclick="showDeposit()">← Назад</button>
+                        <h2 class="section-title">💳 Пополнение: ${amount} BYN</h2>
+                        <div class="divider"></div>
+                        <div style="padding:0 16px">
+                            <p>USDT (TRC20):</p>
+                            <div class="promo-code" onclick="copyText('${data.address}')">${data.address}</div>
+                            <p style="text-align:center;color:var(--text-secondary)">(нажмите чтобы скопировать)</p>
+                            <p style="margin-top:12px">Сумма: ${usdt} USDT <span style="cursor:pointer" onclick="showToast('💡 При пополнении криптовалютой сумма конвертируется по актуальному курсу. На баланс зачисляются BYN.')">❓</span></p>
+                            <p style="color:var(--text-secondary);margin:12px 0;font-size:13px">Деньги поступают на баланс в течение 5 минут. Если не поступили — обратитесь в поддержку.</p>
+                        </div>
+                    `;
+                });
+        }
+        
+        // ===== АКЦИИ =====
+        function loadPromos() {
+            document.getElementById('promo-list').innerHTML = `
+                <div class="promo-card">
+                    <h3>🔥 СКИДКА 30%</h3>
+                    <p>на первую бронь</p>
+                    <div class="promo-code" onclick="copyText('FIRST30')">FIRST30</div>
+                    <p style="font-size:11px;color:var(--text-secondary)">Действует только один раз!</p>
+                </div>
+                <div class="promo-card">
+                    <h3>👥 ПРИВЕДИ ДРУГА</h3>
+                    <p>Твой личный код:</p>
+                    <div class="promo-code" onclick="copyText('${currentUser?.promo_code || '---'}')">${currentUser?.promo_code || '---'}</div>
+                    <p>+30 BYN на баланс <span style="cursor:pointer" onclick="showToast('👥 Твой друг должен указать твой промокод при регистрации. Когда друг пополнит баланс от 150 BYN — ты автоматически получишь 30 BYN на баланс. Число приглашений не ограничено.')">❓</span></p>
+                    <p>Приглашено: ${currentUser?.invited || 0}</p>
+                </div>
+                <div class="promo-card">
+                    <h3>🎂 ДЕНЬ РОЖДЕНИЯ</h3>
+                    <p>Скидка 50% на всё в твой день рождения</p>
+                </div>
+            `;
+        }
+        
+        // ===== ЧАТ =====
+        function loadChat() {
+            document.getElementById('chat-messages').innerHTML = `
+                <div class="chat-msg support">💬 Добро пожаловать! Выберите тему или опишите ваш вопрос.</div>
+            `;
+            document.getElementById('chat-topics').innerHTML = `
+                <span class="chat-topic" onclick="selectTopic('💰 Пополнение')">💰 Пополнение</span>
+                <span class="chat-topic" onclick="selectTopic('🎁 Акции')">🎁 Акции</span>
+                <span class="chat-topic" onclick="selectTopic('👩 Сотрудничество')">👩 Сотрудничество</span>
+                <span class="chat-topic" onclick="selectTopic('📋 Другое')">📋 Другое</span>
+                <span class="chat-topic" onclick="selectTopic('👤 Оператор')">👤 Оператор</span>
+            `;
+        }
+        
+        function selectTopic(topic) {
+            chatTopic = topic;
+            addChatMessage('support', `📂 Тема: ${topic}. Опишите ваш вопрос. Ближайший оператор свяжется с вами.`);
+        }
+        
+        function addChatMessage(from, text) {
+            const container = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.className = `chat-msg ${from}`;
+            div.innerText = text;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        function sendChat() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+            
+            addChatMessage('user', text);
+            input.value = '';
+            
+            fetch(`${API}/support`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({uid, text, topic: chatTopic || 'Другое'})
+            });
+        }
+        
+        // ===== ПРОФИЛЬ =====
+        function loadProfile() {
+            document.getElementById('prof-balance').innerText = `${currentUser?.balance || 0} BYN`;
+            document.getElementById('prof-promo').innerText = currentUser?.promo_code || '---';
+            document.getElementById('prof-invited').innerText = currentUser?.invited || 0;
+            document.getElementById('prof-bday').innerText = currentUser?.birthday || '---';
+            
+            const history = document.getElementById('prof-history');
+            history.innerHTML = (currentUser?.history || []).map(h => {
+                if (h.action === 'deposit') return `• 💰 Пополнение ${h.amount} BYN — ${h.date}`;
+                if (h.action === 'booking') return `• 👩 Бронь: ${h.girl} (${h.price} BYN) — ${h.date}`;
+                return '';
+            }).join('<br>') || '<p style="color:var(--text-secondary)">История пуста</p>';
+        }
+        
+        function applyModel() {
+            if (currentUser?._applied) {
+                showToast('✅ Заявка уже отправлена. Мы свяжемся с вами в течение 24 часов.');
+                return;
+            }
+            
+            fetch(`${API}/apply`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    uid,
+                    name: currentUser?.name || '',
+                    age: prompt('Возраст:'),
+                    height: prompt('Рост (165-180):'),
+                    weight: prompt('Вес (47-80):'),
+                    chest: prompt('Грудь (0.5-4):')
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    currentUser._applied = true;
+                    showToast('✅ Заявка отправлена! Мы свяжемся с вами в течение 24 часов.');
+                } else if (data.error === 'already_applied') {
+                    currentUser._applied = true;
+                    showToast('✅ Заявка уже отправлена. Мы свяжемся с вами в течение 24 часов.');
+                }
+            });
+        }
+        
+        // ===== УТИЛИТЫ =====
+        function showToast(text) {
+            const toast = document.getElementById('toast');
+            toast.innerText = text;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+        
+        function copyText(text) {
+            navigator.clipboard.writeText(text).then(() => showToast('✅ Скопировано!'));
+        }
+        
+        function toggleHint(id) {
+            document.getElementById(id).classList.toggle('show');
+        }
+        
+        // ===== СТАРТ =====
+        buildPinKeyboard();
+        loadUser();
+    </script>
+</body>
+</html>
