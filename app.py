@@ -25,8 +25,9 @@ support_bot = telebot.TeleBot(TOKEN_SUPPORT, threaded=False)
 app = Flask(__name__)
 
 # ===== БАЗЫ ДАННЫХ =====
-# Загружаем или создаём
-def load_json(filename, default={}):
+def load_json(filename, default=None):
+    if default is None:
+        default = {}
     try:
         with open(filename, 'r', encoding='utf-8') as f:
             return json.load(f)
@@ -292,7 +293,21 @@ def api_apply():
     
     return json.dumps({"success": True})
 
-# ===== КОМАНДЫ АДМИНА =====
+# ===== КОМАНДЫ ОСНОВНОГО БОТА =====
+@bot.message_handler(commands=['start'])
+def start_cmd(message):
+    uid = str(message.chat.id)
+    if is_banned(uid):
+        bot.send_message(uid, '⛔ Вы заблокированы.')
+        return
+    
+    markup = telebot.types.InlineKeyboardMarkup()
+    markup.add(telebot.types.InlineKeyboardButton(
+        "🔥 Открыть приложение",
+        web_app=telebot.types.WebAppInfo(url=STATIC_URL)
+    ))
+    bot.send_message(uid, "Добро пожаловать в SWILL ESCORT!", reply_markup=markup)
+
 @bot.message_handler(commands=['admin'])
 def admin_cmd(message):
     uid = str(message.chat.id)
@@ -404,28 +419,72 @@ def process_broadcast(message):
             pass
     bot.send_message(message.chat.id, f"📢 Отправлено {sent} пользователям")
 
-# ===== WEBAPP СТРАНИЦЫ =====
+# ===== WEBHOOK ОСНОВНОГО БОТА =====
+@app.route('/' + TOKEN_MAIN, methods=['POST'])
+def webhook_main():
+    if request.headers.get('content-type') == 'application/json':
+        json_string = request.get_data().decode('utf-8')
+        update = telebot.types.Update.de_json(json_string)
+        bot.process_new_updates([update])
+        return '!', 200
+    return 'Bad request', 400
+
+# ===== WEBHOOK СУППОРТ БОТА =====
+@app.route('/support/' + TOKEN_SUPPORT, methods=['POST'])
+def webhook_support():
+    if request.headers.get('content-type') == 'application/json':
+        json_string = request.get_data().decode('utf-8')
+        update = telebot.types.Update.de_json(json_string)
+        support_bot.process_new_updates([update])
+        return '!', 200
+    return 'Bad request', 400
+
+# ===== ГЛАВНАЯ СТРАНИЦА =====
 @app.route('/')
 def webapp():
     return send_from_directory('static', 'index.html')
 
+# ===== УСТАНОВКА ВЕБХУКОВ =====
+@app.route('/setup')
+def setup():
+    try:
+        bot.remove_webhook()
+        time.sleep(1)
+        bot.set_webhook(STATIC_URL + '/' + TOKEN_MAIN)
+        
+        support_bot.remove_webhook()
+        time.sleep(1)
+        support_bot.set_webhook(STATIC_URL + '/support/' + TOKEN_SUPPORT)
+        
+        return 'Webhooks set!', 200
+    except Exception as e:
+        return f'Error: {e}', 500
+
+# ===== СТАТИКА =====
 @app.route('/<path:filename>')
 def static_files(filename):
     return send_from_directory('static', filename)
 
 # ===== ЗАПУСК =====
 if __name__ == '__main__':
-    # Создаём папку static
     os.makedirs('static', exist_ok=True)
     
-    # Устанавливаем вебхук
-    bot.remove_webhook()
-    time.sleep(1)
-    bot.set_webhook(STATIC_URL + '/' + TOKEN_MAIN)
+    # Устанавливаем вебхуки при старте
+    try:
+        bot.remove_webhook()
+        time.sleep(1)
+        bot.set_webhook(STATIC_URL + '/' + TOKEN_MAIN)
+        print("Основной бот: вебхук установлен")
+    except Exception as e:
+        print(f"Ошибка основного вебхука: {e}")
     
-    support_bot.remove_webhook()
-    time.sleep(1)
-    support_bot.set_webhook(STATIC_URL + '/support/' + TOKEN_SUPPORT)
+    try:
+        support_bot.remove_webhook()
+        time.sleep(1)
+        support_bot.set_webhook(STATIC_URL + '/support/' + TOKEN_SUPPORT)
+        print("Бот поддержки: вебхук установлен")
+    except Exception as e:
+        print(f"Ошибка вебхука поддержки: {e}")
     
-    print("Боты запущены!")
+    print("Сервер запущен!")
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
